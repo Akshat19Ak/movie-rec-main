@@ -31,7 +31,9 @@ __pycache__/
 # - Why ignore: large sample datasets and user-provided data should not bloat repo; data may be redownloadable from source or stored in a data/ folder outside VCS
 # - Size: typically from a few MB up to 100s of MB depending on dataset and exports; treat as large binary/text asset
 # - Who/When: obtained by the project author (downloaded once), updated when re-exporting the dataset
-/movies_metadata.csv
+#/movies_metadata.csv
+# but here uploading it directly to make it easier for the user.
+
 
 # Local temporary files and drafts
 # - `temp/` contains working drafts like `latex.md`, `resume.md` and other transient notes
