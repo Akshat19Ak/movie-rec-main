@@ -53,7 +53,7 @@ flowchart TD
 	%% ------------------------------
 	%% HOME FLOW
 	%% ------------------------------
-	O --> P[/home?category=...]
+	O --> P["GET /home?category=..."]
 	P --> Q[tmdb_get to TMDB list endpoints\ntrending popular top_rated now_playing upcoming]
 	Q --> R[Normalize TMDB results\nTMDBMovieCard]
 	R --> S[Poster grid on Home]
@@ -61,7 +61,7 @@ flowchart TD
 	%% ------------------------------
 	%% SEARCH FLOW
 	%% ------------------------------
-	O --> T[/tmdb/search?query=...]
+	O --> T["GET /tmdb/search?query=..."]
 	T --> U[TMDB search/movie]
 	U --> V[Suggestions + keyword-matched cards]
 	V --> W[User selects movie]
@@ -70,14 +70,14 @@ flowchart TD
 	%% ------------------------------
 	%% DETAILS FLOW
 	%% ------------------------------
-	O --> Y[/movie/id/{tmdb_id}]
+	O --> Y["GET /movie/id/{tmdb_id}"]
 	Y --> Z[TMDB movie details\noverview genres images]
 	Z --> AA[Details page render]
 
 	%% ------------------------------
 	%% BUNDLE RECOMMENDATION FLOW
 	%% ------------------------------
-	O --> AB[/movie/search?query=title]
+	O --> AB["GET /movie/search?query=title"]
 	AB --> AC[TMDB best-match selection\ntmdb_search_first]
 	AC --> AD[TMDB details for selected movie]
 
@@ -108,7 +108,7 @@ flowchart TD
 	AQ -- Yes --> AF
 
 	M --> AU{Bundle endpoint error?}
-	AU -- Yes --> AV[Fallback request\n/recommend/genre]
+	AU -- Yes --> AV["Fallback request\nGET /recommend/genre"]
 	AV --> AN
 	AU -- No --> AO
 ```
