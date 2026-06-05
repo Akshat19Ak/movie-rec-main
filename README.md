@@ -50,41 +50,7 @@ flowchart TD
    - View recommendations using two methods:
      - **TF-IDF**: Content-based similarity using movie descriptions
      - **Genre**: TMDB genre discovery for related movies
-<!-- 
-## Runtime Sequence (What Happens on a Real User Click)
 
-```mermaid
-sequenceDiagram
-	autonumber
-	participant U as User
-	participant S as Streamlit (app.py)
-	participant F as FastAPI (main.py)
-	participant T as TMDB API
-	participant L as Local TF-IDF Artifacts
-
-	U->>S: Type keyword in search box
-	S->>F: GET /tmdb/search?query=...
-	F->>T: /search/movie
-	T-->>F: Search results
-	F-->>S: Raw TMDB JSON
-	S-->>U: Suggestions + result grid
-
-	U->>S: Select movie / click Open
-	S->>F: GET /movie/id/{tmdb_id}
-	F->>T: /movie/{id}
-	T-->>F: Movie details
-	F-->>S: Details payload
-	S-->>U: Details view render
-
-	S->>F: GET /movie/search?query=movie_title
-	F->>T: Find best TMDB match + movie details
-	F->>L: Resolve title index + compute TF-IDF similarity
-	F->>T: Attach posters for TF-IDF titles + genre discovery
-	F-->>S: Bundle (details + tfidf_recs + genre_recs)
-	S-->>U: Show both recommendation sections
-
-	Note over S,F: If bundle fails in UI, Streamlit calls /recommend/genre as fallback
-``` -->
 
 ## Component Responsibilities
 
