@@ -15,104 +15,42 @@ An end-to-end movie recommendation system using NLP (TF-IDF), FastAPI for the ba
 - Python 3.8 or higher.
 - A TMDB API Key (required, because backend startup fails if missing).
 
-## Complete Architecture Flow (In-Depth)
+## Architecture Overview
 
-This section summarizes the full project architecture end-to-end: offline data preparation, FastAPI startup/runtime behavior, Streamlit UI flows, TMDB integration, fallback logic, and recommendation generation.
+The system consists of three main components working together:
 
 ```mermaid
 flowchart TD
-	%% ------------------------------
-	%% OFFLINE PIPELINE
-	%% ------------------------------
-	A[movies_metadata.csv] --> B[movies.ipynb\nData cleaning + feature prep]
-	B --> C[df.pkl\nCurated local movie DataFrame]
-	B --> D[tfidf.pkl\nFitted TF-IDF vectorizer]
-	B --> E[tfidf_matrix.pkl\nSparse TF-IDF matrix]
-	B --> F[indices.pkl\nTitle to row-index mapping]
-
-	%% ------------------------------
-	%% BACKEND BOOTSTRAP
-	%% ------------------------------
-	G[.env\nTMDB_API_KEY] --> H[main.py startup]
-	C --> H
-	D --> H
-	E --> H
-	F --> H
-
-	H --> I[FastAPI app init\nCORS enabled]
-	I --> J[In-memory globals\ndf indices tfidf tfidf_matrix TITLE_TO_IDX]
-	J --> K[Health + API routes ready]
-
-	%% ------------------------------
-	%% FRONTEND
-	%% ------------------------------
-	L[User Browser] --> M[Streamlit app.py]
-	M --> N[UI state + query params\nHome or Details]
-	N --> O[Requests to FastAPI]
-
-	%% ------------------------------
-	%% HOME FLOW
-	%% ------------------------------
-	O --> P["GET /home?category=..."]
-	P --> Q[tmdb_get to TMDB list endpoints\ntrending popular top_rated now_playing upcoming]
-	Q --> R[Normalize TMDB results\nTMDBMovieCard]
-	R --> S[Poster grid on Home]
-
-	%% ------------------------------
-	%% SEARCH FLOW
-	%% ------------------------------
-	O --> T["GET /tmdb/search?query=..."]
-	T --> U[TMDB search/movie]
-	U --> V[Suggestions + keyword-matched cards]
-	V --> W[User selects movie]
-	W --> X[Route to Details view with tmdb_id]
-
-	%% ------------------------------
-	%% DETAILS FLOW
-	%% ------------------------------
-	O --> Y["GET /movie/id/{tmdb_id}"]
-	Y --> Z[TMDB movie details\noverview genres images]
-	Z --> AA[Details page render]
-
-	%% ------------------------------
-	%% BUNDLE RECOMMENDATION FLOW
-	%% ------------------------------
-	O --> AB["GET /movie/search?query=title"]
-	AB --> AC[TMDB best-match selection\ntmdb_search_first]
-	AC --> AD[TMDB details for selected movie]
-
-	AD --> AE[TF-IDF branch]
-	AE --> AF[Lookup local idx from TITLE_TO_IDX\nby normalized title]
-	AF --> AG[Cosine similarity\nscore = tfidf_matrix @ query_vector^T]
-	AG --> AH[Rank + top N local titles]
-	AH --> AI[Per-title TMDB attach\nposter and metadata]
-	AI --> AJ[TF-IDF recommendation cards]
-
-	AD --> AK[Genre branch]
-	AK --> AL[Pick first genre id]
-	AL --> AM[TMDB discover/movie by genre]
-	AM --> AN[Genre recommendation cards\nexclude current movie]
-
-	AJ --> AO[Bundle response to Streamlit]
-	AN --> AO
-	AO --> AP[Details page shows\nSimilar TF-IDF + More Like This Genre]
-
-	%% ------------------------------
-	%% FALLBACK/ERROR FLOW
-	%% ------------------------------
-	AB --> AQ{TF-IDF title found\nin local dataset?}
-	AQ -- No --> AR[Try query string fallback]
-	AR --> AS{Still fails?}
-	AS -- Yes --> AT[Return empty TF-IDF list\nwithout crashing endpoint]
-	AS -- No --> AJ
-	AQ -- Yes --> AF
-
-	M --> AU{Bundle endpoint error?}
-	AU -- Yes --> AV["Fallback request\nGET /recommend/genre"]
-	AV --> AN
-	AU -- No --> AO
+	A[1. Data Preparation\nmovies.ipynb] --> B[Pre-computed Models\nTF-IDF matrices + indices]
+	
+	B --> C[2. Backend API\nmain.py - FastAPI]
+	C --> D[Loads models at startup\nServes recommendations]
+	
+	E[3. Frontend\napp.py - Streamlit] --> F[User Interface]
+	F --> G[Search/Browse Movies]
+	
+	G --> C
+	C --> H[TMDB API\nMovie details & posters]
+	H --> I[Response with recommendations]
+	I --> F
 ```
 
+**Key Flows:**
+
+1. **Data Preparation** (`movies.ipynb`): Cleans movie data and generates TF-IDF models stored as pickle files for fast reuse.
+
+2. **Backend** (`main.py`): FastAPI server that loads pre-computed models at startup and provides endpoints for:
+   - Home feed (trending, popular, etc.)
+   - Movie search and details
+   - Recommendations (both TF-IDF-based and genre-based)
+
+3. **Frontend** (`app.py`): Streamlit UI where users can:
+   - Browse movies by category
+   - Search for movies
+   - View recommendations using two methods:
+     - **TF-IDF**: Content-based similarity using movie descriptions
+     - **Genre**: TMDB genre discovery for related movies
+<!-- 
 ## Runtime Sequence (What Happens on a Real User Click)
 
 ```mermaid
@@ -146,7 +84,7 @@ sequenceDiagram
 	S-->>U: Show both recommendation sections
 
 	Note over S,F: If bundle fails in UI, Streamlit calls /recommend/genre as fallback
-```
+``` -->
 
 ## Component Responsibilities
 
