@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pickle
 from typing import Optional, List, Dict, Any, Tuple
@@ -104,22 +105,35 @@ def make_img_url(path: Optional[str]) -> Optional[str]:
     return f"{TMDB_IMG_500}{path}"
 
 
-async def tmdb_get(path: str, params: Dict[str, Any]) -> Dict[str, Any]:
+async def tmdb_get(path: str, params: Dict[str, Any], _retries: int = 3) -> Dict[str, Any]:
     """
-    Safe TMDB GET:
-    - Network errors -> 502
+    Safe TMDB GET with automatic retry on transient ConnectErrors:
+    - Network errors -> retried up to 3 times, then 502
     - TMDB API errors -> 502 with detail
     """
     q = dict(params)
     q["api_key"] = TMDB_API_KEY
 
-    try:
-        async with httpx.AsyncClient(timeout=20) as client:
-            r = await client.get(f"{TMDB_BASE}{path}", params=q)
-    except httpx.RequestError as e:
+    last_exc: Optional[Exception] = None
+    for attempt in range(1, _retries + 1):
+        try:
+            async with httpx.AsyncClient(timeout=20) as client:
+                r = await client.get(f"{TMDB_BASE}{path}", params=q)
+            break  # success
+        except httpx.ConnectError as e:
+            last_exc = e
+            if attempt < _retries:
+                await asyncio.sleep(1)  # brief back-off before retry
+            continue
+        except httpx.RequestError as e:
+            raise HTTPException(
+                status_code=502,
+                detail=f"TMDB request error: {type(e).__name__} | {repr(e)}",
+            )
+    else:
         raise HTTPException(
             status_code=502,
-            detail=f"TMDB request error: {type(e).__name__} | {repr(e)}",
+            detail=f"TMDB connect failed after {_retries} attempts: {repr(last_exc)}",
         )
 
     if r.status_code != 200:
